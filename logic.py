@@ -5,10 +5,8 @@
 
 # Imports go here
 import keyboard
-
-# From imports
-from os import system, name
-from itertools import cycle
+import curses
+import sys
 
 
 def instances(objects, object_type):
@@ -22,7 +20,7 @@ def instances(objects, object_type):
 
 def bool_check(objects, boolean):
     if type(objects) not in [list, set, tuple]:
-        frmt = (str(objects)[0:int(len(objects)/3)]) + "..."
+        frmt = (str(objects)[0:int(len(objects) / 3)]) + "..."
         raise TypeError("Object {} is not a collection of elements".format(frmt))
     if not isinstance(boolean, str):
         raise TypeError("Boolean {} is not of type str".format(boolean))
@@ -34,75 +32,221 @@ def bool_check(objects, boolean):
             if not evaluated:
                 raise BooleanFalseEvalWarning
         except BooleanFalseEvalWarning:
-            msg = """Boolean condition {} evaluated to false for object {} of type {} in objects {}""".format(str(obj) + boolean, obj, type(obj), objects)
+            msg = """Boolean condition {} evaluated to false for object {} of type {} in objects {}""".format(
+                str(obj) + boolean, obj, type(obj), objects)
             raise BooleanFalseEvalWarning(msg)
         else:
             return evaluated
 
 
+class cycle:
+    def __init__(self, c):
+        self._c = c
+        self._index = -1
+
+    def values(self):
+        return self._c
+
+    def next(self):
+        self._index += 1
+        if self._index >= len(self._c):
+            self._index = 0
+        return self._c[self._index]
+
+    def previous(self):
+        self._index -= 1
+        if self._index < 0:
+            self._index = len(self._c) - 1
+        return self._c[self._index]
+
+
+class Snake:
+    def __init__(self, y, x):
+        if y > curses.LINES:
+            raise ValueError("Y coordinate '{}' of snake cannot be greater than than the max y coordinate of the screen, '{}'".format(y, curses.LINES))
+        elif y < 0:
+            raise ValueError("Y coordinate '{}' of snake cannot be less than than the min y coordinate of the screen, '0'".format(y))
+        if x > curses.COLS:
+            raise ValueError("X coordinate '{}' of snake cannot be greater than than the max x coordinate of the screen, '{}'".format(x, curses.COLS))
+        elif x < 0:
+            raise ValueError("X coordinate '{}' of snake cannot be less than than the min x coordinate of the screen, '0'".format(x))
+        else:
+            self.y = y
+            self.x = x
+
+    def increment_x(self, bash):
+        """
+        Increments the x value and checks for collision with the border of the terminal and the snake's own body parts
+        :param bash: bash instance
+        :return: new x coordinate
+        """
+        # Before mutating self.x, this xcheck is a third party variable used to check collision
+        xcheck = self.x + 1
+
+        # Checks for a collision with the snake's own body
+        for piece in bash.snake:
+            if self.y == piece.y and self.x == piece.y:
+                bash.terminate_curses()
+                print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+                sys.exit()
+
+        # Checks for a collision with the border of the terminal
+        if xcheck == curses.COLS:
+            bash.terminate_curses()
+            print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+            sys.exit()
+        # No collision with the border of the terminal
+        else:
+            self.x += 1
+            return self.x
+
+    def decrement_x(self, bash):
+        """
+        Decrements the x value and checks for collision with the border of the terminal and the snake's own body parts
+        :param bash: bash instance
+        :return: new x coordinate
+        """
+        # Before mutating self.x, this xcheck is a third party variable used to check collision
+        xcheck = self.x - 1
+
+        # Checks for a collision with the snake's own body
+        for piece in bash.snake:
+            if self.y == piece.y and self.x == piece.y:
+                bash.terminate_curses()
+                print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+                sys.exit()
+
+        # Checks for a collision with the border of the terminal
+        if xcheck < 0:
+            bash.terminate_curses()
+            print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+            sys.exit()
+        # No collision with the border of the terminal
+        else:
+            self.x -= 1
+            return self.x
+
+    def increment_y(self, bash):
+        """
+        Increments the y value and checks for collision with the border of the terminal and the snake's own body parts
+        :param bash: bash instance
+        :return: new y coordinate
+        """
+        # Before mutating self.y, this ycheck is a third party variable used to check collision
+        ycheck = self.y - 1
+
+        # Checks for a collision with the snake's own body
+        for piece in bash.snake:
+            if self.y == piece.y and self.x == piece.y:
+                bash.terminate_curses()
+                print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+                sys.exit()
+
+        # Checks for a collision with the border of the terminal
+        if ycheck < 0:
+            bash.terminate_curses()
+            print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+            sys.exit()
+        # No collision with the border of the terminal
+        else:
+            self.y -= 1
+            return self.y
+
+    def decrement_y(self, bash):
+        """
+        Decrements the y value and checks for collision with the border of the terminal and the snake's own body parts
+        :param bash: bash instance
+        :return: new y coordinate
+        """
+        # Before mutating self.y, this ycheck is a third party variable used to check collision
+        ycheck = self.y + 1
+
+        # Checks for a collision with the snake's own body
+        for piece in bash.snake:
+            if self.y == piece.y and self.x == piece.y:
+                bash.terminate_curses()
+                print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+                sys.exit()
+
+        # Checks for a collision with the border of the terminal
+        if ycheck == curses.LINES:
+            bash.terminate_curses()
+            print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+            sys.exit()
+        # No collision with the border of the terminal
+        else:
+            self.y += 1
+            return self.y
+
+
 class Bash:
-    def __init__(self, height, width):
-        instances([height, width], int)
-        bool_check([height, width], ' >= 5')
-        self.height = height
-        self.width = width
+    def __init__(self):
+        # Legal coordinates = (0, 0) -> (curses.LINES - 1, curses.COLS - 1)
+        # curses counts coordinates from the top left at(0, 0)
+        # Starts curses application in bash
+        self.start_curses()
 
-        # Access values using simple x and y coordinates
-        # Example, snake_list[x][y]
-        # It is possible this list is actually indexed by doing snake_list[y][x]
-        self.snake_list = [[None for x in range(self.height)] for x in range(self.width)]
-        self.x_list = [number for number in range(len(self.snake_list[1]) - 2, 0, -1)]
-        self.y_list = [number for number in range(len(self.snake_list) - 2, 0, -1)]
-        self.x = self.x_list[int(len(self.x_list) / 2)]
-        self.y = self.y_list[int(len(self.y_list) / 2)]
-
-        # These lists are used for increment_x and increment_y
-        self.xlist = cycle(self.x_list[self.x:] + self.x_list[0:self.x])
-        self.ylist = cycle(self.y_list[self.y:] + self.y_list[0:self.y])
+        # Snake head / the X
+        self.snake_head = Snake(int(curses.LINES / 2), int(curses.COLS / 2))
+        # List of snake body parts
+        # Snake body parts will be appended to this list
+        self.snake = []
 
         # This is for the world tick system
+        # This is not needed until I implement food for the snake, which will be a while
         self._tick_value = 0
 
         # This is used for moving the snake
-        self.directions = ['n', 'e', 's', 'w']
-        self.direction = self.directions[0]
+        self.directions = cycle(['n', 'e', 's', 'w'])
+        self.direction = 'n'
 
-    def make_border(self):
-        # The below for loops fill the lists with the border characters
-        # The left and right borders
-        self.snake_list[0] = ['_' for x in range(self.height)]
-        self.snake_list[-1] = ['_' for x in range(self.height)]
-
-        # The top and bottom columns
-        for column in self.snake_list[1:]:
-            column[0] = '|'
-            column[-1] = '|'
-
-    def make_filler(self):
+    def start_curses(self):
         """
-        Creates the filler for the snake list
-        I.E. this method fills in the list with spaces
-        So when printed to the screen, the list does not appear condensed unless there is a snake there
+        This starts the curses application
+        The curses application "prints" to the terminal
+        :return: None
         """
-        for column in self.snake_list:
-            for character in column:
-                if character not in ['-', '_', '|']:
-                    column[column.index(character)] = ' '
+        # Initializes the curses application
+        self.stdscr = curses.initscr()
 
-    def make_keybinds(self):
+        # This hides the cursor
+        curses.curs_set(0)
+
+        # Terminal normally captures key presses and prints it to the terminal
+        # This disables that
+        curses.noecho()
+
+        # This is used so the enter key will not have to be pressed after clicking a key
+        curses.cbreak()
+
+        # So the terminal does not return multibyte escape sequences
+        # Instead, curses returns something like curses.KEY_LEFT
+        self.stdscr.keypad(True)
+
+    def terminate_curses(self):
+        """
+        Terminates the curses application and returns control to the terminal
+        :return: None
+        """
+        curses.nocbreak()
+        self.stdscr.keypad(False)
+        curses.echo()
+        curses.endwin()
+
+    def capture_key_presses(self):
         """
         Will return a dictionary of the keys that are currently being pressed while the program is running
         A key that is being actively pressed will have a value of 1 in the dict
         A key that is not being actively pressed will have a value of 0 in the dict
         :return: A dict with 'W', 'A', 'D', and the arrows and either 0 or 1 depending on if the key is being pressed or not
         """
-        # Right arrow = \x1b[C
-        # Left arrow = \x1b[D
-        keyboard.add_hotkey('a', self.turn_snake_left(), args=tuple())
-        keyboard.add_hotkey('d', self.turn_snake_right(), args=tuple())
-        keyboard.add_hotkey('t', print, args=("This is a test to see if the keys work", 't'))
-        # keyboard.add_hotkey('\x1b[C', self.turn_snake_right(), args=tuple())
-        # keyboard.add_hotkey('\x1b[D', self.turn_snake_left(), args=tuple())
+        keyboard.add_hotkey('w', self.set_direction, args=('n'))
+        keyboard.add_hotkey('a', self.set_direction, args=('w'))
+        keyboard.add_hotkey('d', self.set_direction, args=('e'))
+
+    def set_direction(self, direction):
+        bool_check(["'{}'".format(direction)], " in {}".format(self.directions.values()))
+        self.direction = direction
 
     def get_tick(self):
         return self._tick_value
@@ -111,104 +255,111 @@ class Bash:
         self._tick_value += 1
         return self._tick_value
 
-    def coordinates(self):
-        return self.x, self.y
-
-    def increment_x(self):
-        """
-        Increments the x coordinate of the "X" of the snake by 1
-        :return: new self.x coordinate
-        """
-        self.x = next(self.xlist)
-        return self.x
-
-    def increment_y(self):
-        """
-        Increments the y coordinate of the "X" of the snake by 1
-        :return: new self.y coordinate
-        """
-        self.y = next(self.ylist)
-        return self.y
-
     def tick(self):
         """
         This snake world will operate on ticks like in minecraft
         Every tick the snake will move forward one block
         :return: current tick
         """
-        self.increment_tick()
-        self.move_snake_fowards()
-        return self.get_tick()
+        if self.direction == 'n':
+            self.move_snake_fowards()
+        elif self.direction == 'e':
+            self.turn_snake_right()
+        elif self.direction == 's':
+            self.move_snake_backwards()
+        elif self.direction == 'w':
+            self.turn_snake_left()
 
-    def connecting_body_parts(self, x, y):
-        """
-        Returns the connecting "o" body parts of the snake
-        :param x: x coordinate of the x of the snake
-        :param y: y coordinate of the x of the snake
-        :return: ((x, y), (x, y), ...) of the connecting o's
-        """
-        pass
+        self.increment_tick()
+        return self.get_tick()
 
     def move_snake_fowards(self):
         """
         Moves the snake forward one character
-        :return: (x, y)
+        :return: (y, x)
         """
-        prev_y = self.y
-        self.increment_y()
-        self.snake_list[self.y][self.x] = 'X'
-        self.snake_list[prev_y][self.x] = ' '
-        self.draw()
+        prev_head = self.snake_head.y
+        self.snake_head.increment_y(self)
 
-    def turn_snake_right(self):
+        # Updates the screen to move the X forward
+        self.add_char(self.snake_head.y, self.snake_head.x)
+        self.del_char(prev_head, self.snake_head.x)
+        self.refresh()
+        return self.snake_head.y, self.snake_head.x
+
+    def move_snake_backwards(self):
+        """
+        Moves the snake backwards one character
+        :return: (y, x)
+        """
+        prev_head = self.snake_head.y
+        self.snake_head.decrement_y(self)
+
+        # Updates the screen to move the X forward
+        self.add_char(self.snake_head.y, self.snake_head.x)
+        self.del_char(prev_head, self.snake_head.x)
+        self.refresh()
+        return self.snake_head.y, self.snake_head.x
+
+    def move_snake_right(self):
         """
         Turns the snake to the right and updates the tick
         :return: (x, y)
         """
-        self.draw()
+        prev_head = self.snake_head.x
+        self.snake_head.increment_x(self)
 
-    def turn_snake_left(self):
+        # Updates the screen to move the X forward
+        self.add_char(self.snake_head.y, self.snake_head.x)
+        self.del_char(self.snake_head.y, prev_head)
+        self.refresh()
+        return self.snake_head.y, self.snake_head.x
+
+    def move_snake_left(self):
         """
         Turns the snake to the left and updates the tick
         :return:
         """
-        self.draw()
+        prev_head = self.snake_head.x
+        self.snake_head.decrement_x(self)
 
-    def set_snake(self):
+        # Updates the screen to move the X forward
+        self.add_char(self.snake_head.y, self.snake_head.x)
+        self.del_char(self.snake_head.y, prev_head)
+        self.refresh()
+        return self.snake_head.y, self.snake_head.x
+
+    def add_char(self, y, x, char='X'):
         """
-        Resets x and y coordinates of the snake to the middle of the snake list
-        Also calls the update function to redraw the snake list in the bash
-        :return: (x, y)
+        Adds a character at given coordinates
+        :param y: y coordinate of char to add
+        :param x: x coordinate of char to add
+        :return: None
         """
-        self.snake_list[self.y][self.x] = 'X'
+        self.stdscr.addstr(y, x, char)
+
+    def del_char(self, y, x):
+        """
+        Deletes a character at given coordinates
+        :param y: y coordinate of char to delete
+        :param x: x coordinate of char to delete
+        :return: None
+        """
+        self.stdscr.addstr(y, x, ' ')
 
     def clear(self):
         """
         Clears the terminal
         :return: None
         """
-        # for windows
-        if name == 'nt':
-            _ = system('cls')
+        self.stdscr.clear()
 
-        # for mac and linux (os name is 'posix')
-        else:
-            _ = system('clear')
-
-    def draw(self):
+    def refresh(self):
         """
         'Draws' the text based snake list on the screen
         :return: printable string
         """
-        new_string = ''
-        for column in self.snake_list:
-            for char in column:
-                new_string += char
-            new_string += '\n'
-
-        # Clears the terminal before drawing the string
-        self.clear()
-        print(new_string)
+        self.stdscr.refresh()
 
 
 class BooleanFalseEvalWarning(Exception):
