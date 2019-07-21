@@ -1,3 +1,12 @@
+# A text based snake game
+# MADE BY
+# BEN MAYDAN
+
+# Tip: If you are using Windows and are using MINGW64 / Git bash, run this program by typing "winpty python main.py"
+# The reason why is because this terminal has a bug with running curses
+# Unless you want to mess with python aliases in .bash_profile, this is the best way to go about running this game
+
+
 # Normal imports
 import sys
 import time
