@@ -8,6 +8,7 @@
 
 
 # Normal imports
+import curses
 import sys
 import time
 import traceback
@@ -16,20 +17,29 @@ import traceback
 from logic import Bash
 
 
-#Initialization of bash
+# Initialization of bash
 bash = Bash()
 bash.start_curses()
+
+# Creates the snake
+bash.create_snake()
 
 
 try:
     while True:
-        # bash.tick()
-        bash.move_snake_fowards()
-        # bash.move_snake_backwards()
-        # bash.move_snake_right()
-        #bash.move_snake_left()
+        bash.tick()
+
+        # print("Pressed key:", bash.getch())
+        # Performs commands based on which is key is being pressed
+        bash.capture_keys(bash.getch())
+
         time.sleep(0.1)
 except Exception as e:
     bash.terminate_curses()
     traceback.print_exc()
     sys.exit()
+
+# This finally is for printing debugging statements
+# Because they don't show up while the program is running
+# finally:
+#     print("Right arrow key:", curses.KEY_RIGHT)

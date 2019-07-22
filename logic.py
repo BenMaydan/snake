@@ -181,17 +181,6 @@ class Snake:
 
 class Bash:
     def __init__(self):
-        # Legal coordinates = (0, 0) -> (curses.LINES - 1, curses.COLS - 1)
-        # curses counts coordinates from the top left at(0, 0)
-        # Starts curses application in bash
-        self.start_curses()
-
-        # Snake head / the X
-        self.snake_head = Snake(int(curses.LINES / 2), int(curses.COLS / 2))
-        # List of snake body parts
-        # Snake body parts will be appended to this list
-        self.snake = []
-
         # This is for the world tick system
         # This is not needed until I implement food for the snake, which will be a while
         self._tick_value = 0
@@ -199,6 +188,13 @@ class Bash:
         # This is used for moving the snake
         self.directions = cycle(['n', 'e', 's', 'w'])
         self.direction = 'n'
+
+        # Curses coordinates
+        # Legal coordinates = (0, 0) -> (curses.LINES - 1, curses.COLS - 1)
+        # Curses counts coordinates from the top left at(0, 0)
+
+        # Used to test if the keys being pressed are registered
+        self.pressed = []
 
     def start_curses(self):
         """
@@ -210,14 +206,17 @@ class Bash:
         self.stdscr = curses.initscr()
 
         # This hides the cursor
-        curses.curs_set(0)
+        curses.curs_set(False)
 
-        # Terminal normally captures key presses and prints it to the terminal
+        # A terminal normally captures key presses and prints the key being pressed     (similar to input function)
         # This disables that
         curses.noecho()
 
-        # This is used so the enter key will not have to be pressed after clicking a key
+        # This function is being called so that the enter key will not have to be pressed after clicking a key
         curses.cbreak()
+
+        # This function call allows the user to enter keys without the program freezing
+        self.stdscr.nodelay(True)
 
         # So the terminal does not return multibyte escape sequences
         # Instead, curses returns something like curses.KEY_LEFT
@@ -228,21 +227,37 @@ class Bash:
         Terminates the curses application and returns control to the terminal
         :return: None
         """
+        curses.flash()
         curses.nocbreak()
         self.stdscr.keypad(False)
         curses.echo()
         curses.endwin()
 
-    def capture_key_presses(self):
+    def getch(self):
         """
-        Will return a dictionary of the keys that are currently being pressed while the program is running
-        A key that is being actively pressed will have a value of 1 in the dict
-        A key that is not being actively pressed will have a value of 0 in the dict
+        Will return the current key being pressed
         :return: A dict with 'W', 'A', 'D', and the arrows and either 0 or 1 depending on if the key is being pressed or not
         """
-        keyboard.add_hotkey('w', self.set_direction, args=('n'))
-        keyboard.add_hotkey('a', self.set_direction, args=('w'))
-        keyboard.add_hotkey('d', self.set_direction, args=('e'))
+        gotten = self.stdscr.getch()
+        self.pressed.append(gotten)
+        return gotten
+
+    def capture_keys(self, key_pressed):
+        """
+        Will perform some command based on which key is pressed
+        :param key_pressed: the current key being pressed
+        :return: None
+        """
+        mapping = {
+                    curses.KEY_UP:lambda: self.set_direction('n'),
+                    curses.KEY_DOWN:lambda: self.set_direction('s'),
+                    curses.KEY_LEFT:lambda: self.set_direction('w'),
+                    curses.KEY_RIGHT:lambda: self.set_direction('e'),
+                    }
+        try:
+            mapping[key_pressed]()
+        except KeyError:
+            pass
 
     def set_direction(self, direction):
         bool_check(["'{}'".format(direction)], " in {}".format(self.directions.values()))
@@ -264,14 +279,29 @@ class Bash:
         if self.direction == 'n':
             self.move_snake_fowards()
         elif self.direction == 'e':
-            self.turn_snake_right()
+            self.move_snake_right()
         elif self.direction == 's':
             self.move_snake_backwards()
         elif self.direction == 'w':
-            self.turn_snake_left()
+            self.move_snake_left()
 
         self.increment_tick()
         return self.get_tick()
+
+    def create_snake(self):
+        """
+        Creates the head of the snake in the middle of the terminal
+        :return: None
+        """
+        # Snake head / the X
+        self.snake_head = Snake(int(curses.LINES / 2), int(curses.COLS / 2))
+        # List of snake body parts
+        # Snake body parts will be appended to this list
+        self.snake = []
+
+        # Prints the snake head on the screen
+        self.add_char(self.snake_head.y, self.snake_head.x)
+        self.refresh()
 
     def move_snake_fowards(self):
         """
