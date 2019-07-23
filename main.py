@@ -24,16 +24,26 @@ bash.start_curses()
 # Creates the snake
 bash.create_snake()
 
-
 try:
     while True:
+        # Captures keys
+        result = bash.getch()
+        bash.capture_keys(result)
+
+        # Acts based off of keys
         bash.tick()
-
-        # print("Pressed key:", bash.getch())
-        # Performs commands based on which is key is being pressed
-        bash.capture_keys(bash.getch())
-
         time.sleep(0.1)
+
+        # # print("Pressed key:", bash.getch())
+        # # Performs commands based on which is key is being pressed
+        # for x in range(25):
+        #     result = bash.getch()
+        #     bash.capture_keys(result)
+        #     if result > 0:
+        #         bash.tick()
+        #     time.sleep(0.01)
+        #     #bash.grow_snake()
+
 except Exception as e:
     bash.terminate_curses()
     traceback.print_exc()

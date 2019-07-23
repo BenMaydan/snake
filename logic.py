@@ -7,6 +7,7 @@
 import keyboard
 import curses
 import sys
+import uuid
 
 
 def instances(objects, object_type):
@@ -60,7 +61,7 @@ class cycle:
         return self._c[self._index]
 
 
-class Snake:
+class SnakeHead:
     def __init__(self, y, x):
         if y > curses.LINES:
             raise ValueError("Y coordinate '{}' of snake cannot be greater than than the max y coordinate of the screen, '{}'".format(y, curses.LINES))
@@ -84,10 +85,10 @@ class Snake:
         xcheck = self.x + 1
 
         # Checks for a collision with the snake's own body
-        for piece in bash.snake:
-            if self.y == piece.y and self.x == piece.y:
+        for piece in bash.snake_list:
+            if self.y == piece.y and self.x == piece.x:
                 bash.terminate_curses()
-                print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+                print("GAME OVER! YOU BUMPED INTO YOURSELF!")
                 sys.exit()
 
         # Checks for a collision with the border of the terminal
@@ -110,10 +111,10 @@ class Snake:
         xcheck = self.x - 1
 
         # Checks for a collision with the snake's own body
-        for piece in bash.snake:
-            if self.y == piece.y and self.x == piece.y:
+        for piece in bash.snake_list:
+            if self.y == piece.y and self.x == piece.x:
                 bash.terminate_curses()
-                print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+                print("GAME OVER! YOU BUMPED INTO YOURSELF!")
                 sys.exit()
 
         # Checks for a collision with the border of the terminal
@@ -136,10 +137,10 @@ class Snake:
         ycheck = self.y - 1
 
         # Checks for a collision with the snake's own body
-        for piece in bash.snake:
-            if self.y == piece.y and self.x == piece.y:
+        for piece in bash.snake_list:
+            if self.y == piece.y and self.x == piece.x:
                 bash.terminate_curses()
-                print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+                print("GAME OVER! YOU BUMPED INTO YOURSELF!")
                 sys.exit()
 
         # Checks for a collision with the border of the terminal
@@ -162,10 +163,10 @@ class Snake:
         ycheck = self.y + 1
 
         # Checks for a collision with the snake's own body
-        for piece in bash.snake:
-            if self.y == piece.y and self.x == piece.y:
+        for piece in bash.snake_list:
+            if self.y == piece.y and self.x == piece.x:
                 bash.terminate_curses()
-                print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+                print("GAME OVER! YOU BUMPED INTO YOURSELF!")
                 sys.exit()
 
         # Checks for a collision with the border of the terminal
@@ -177,6 +178,23 @@ class Snake:
         else:
             self.y += 1
             return self.y
+
+
+class SnakeBody:
+    def __init__(self, y, x, direction):
+        if direction not in ['n', 'e', 's', 'w']:
+            raise ValueError("Snake body direction {} must be one of the following {}".format(direction, ['n', 'e', 's', 'w']))
+        self.y = y
+        self.x = x
+        self.direction = direction
+
+    def follow(self, bash):
+        """
+        Follows the snake body closest to it and to the snake head
+        :return: new (y, x) coordinates for this body
+        """
+        bash.del_char(self.y, self.x)
+        bash.add_char(self.y - 1, self.x, 'O')
 
 
 class Bash:
@@ -273,11 +291,17 @@ class Bash:
     def tick(self):
         """
         This snake world will operate on ticks like in minecraft
-        Every tick the snake will move forward one block
+        Every tick the snake will move forward one block by default
         :return: current tick
         """
+        # Moves the head of the snake depending on the current direction
         if self.direction == 'n':
+            # Moves the snake head forward one
             self.move_snake_fowards()
+
+            # Refreshes the screen
+            # self.refresh()
+
         elif self.direction == 'e':
             self.move_snake_right()
         elif self.direction == 's':
@@ -285,8 +309,21 @@ class Bash:
         elif self.direction == 'w':
             self.move_snake_left()
 
+        # Makes all of the body parts of the snake follow the snake
+        # for body_part in self.snake:
+
+
         self.increment_tick()
         return self.get_tick()
+
+    def closest_body_part(self, x, y):
+        """
+        Returns the closest body part to the snake
+        :param x: x coordinate of body part
+        :param y: y coordinate of body part
+        :return: closest NEW body part to the coordinates of (x, y) given
+        """
+        pass
 
     def create_snake(self):
         """
@@ -294,13 +331,47 @@ class Bash:
         :return: None
         """
         # Snake head / the X
-        self.snake_head = Snake(int(curses.LINES / 2), int(curses.COLS / 2))
+        self.snake_head = SnakeHead(int(curses.LINES / 2), int(curses.COLS / 2))
         # List of snake body parts
         # Snake body parts will be appended to this list
-        self.snake = []
+        self.snake_dict = {id((self.snake_head.y + 1, self.snake_head.x)):SnakeBody(self.snake_head.y + 1, self.snake_head.x, 'n')}
+        self.snake_list = [SnakeBody(self.snake_head.y + 1, self.snake_head.x, 'n')]
 
         # Prints the snake head on the screen
-        self.add_char(self.snake_head.y, self.snake_head.x)
+        self.add_char(self.snake_head.y, self.snake_head.x, 'X')
+
+        # Adds body part right behind the head
+        behind_the_head = SnakeBody(self.snake_head.y + 1, self.snake_head.x, 'n')
+        # Appends body part to snake_dict and snake_list
+        self.snake_dict[id((self.snake_head.y + 1, self.snake_head.x))] = behind_the_head
+        self.snake_list.append(behind_the_head)
+        # Actually adds the body part right behind the head
+        self.add_char(self.snake_head.y + 1, self.snake_head.x, 'O')
+
+        # Creates a second body part right behind the head
+        second_behind_the_head = SnakeBody(self.snake_head.y + 2, self.snake_head.x, 'n')
+        # Appends body part to snake_dict and snake_list
+        self.snake_dict[id((self.snake_head.y + 2, self.snake_head.x))] = second_behind_the_head
+        self.snake_list.append(second_behind_the_head)
+        # Actually adds the body part right behind the head
+        self.add_char(self.snake_head.y + 2, self.snake_head.x, 'O')
+
+        self.refresh()
+
+    def grow_snake(self):
+        """
+        Grows an O onto the end of the snake
+        :return:
+        """
+        last_part = self.snake_list[-1]
+        new_part = SnakeBody(last_part.y - 1, last_part.x, 'n')
+
+        # Appends body part to snake_dict and snake_list
+        self.snake_dict[id((new_part.y, new_part.x))] = new_part
+        self.snake_list.append(new_part)
+
+        # Creates char on the screen (body part right behind the head
+        self.add_char(new_part.y, new_part.x, 'O')
         self.refresh()
 
     def move_snake_fowards(self):
@@ -312,9 +383,31 @@ class Bash:
         self.snake_head.increment_y(self)
 
         # Updates the screen to move the X forward
-        self.add_char(self.snake_head.y, self.snake_head.x)
+        self.add_char(self.snake_head.y, self.snake_head.x, 'X')
         self.del_char(prev_head, self.snake_head.x)
+
+        # Adds body part right behind the head
+        behind_the_head = SnakeBody(self.snake_head.y + 1, self.snake_head.x, 'n')
+        # Appends body part to snake_dict and snake_list
+        self.snake_dict[id((self.snake_head.y + 1, self.snake_head.x))] = behind_the_head
+        self.snake_list.insert(0, behind_the_head)
+        # Creates char on the screen (body part right behind the head
+        self.add_char(self.snake_head.y + 1, self.snake_head.x, 'O')
+
+        # # Deletes the last character of the snake
+        last_part = self.snake_list[-1]
+        # print(self.snake_list)
+        # print(last_part.y, last_part.x)
+        # print(self.snake_head.y, self.snake_head.x)
+        # print()
+        
+        self.del_char(last_part.y, last_part.x)
+        # Removes the last character of the snake from self.snake_list and self.snake-dict
+        self.snake_list.remove(last_part)
+        del self.snake_dict[id((last_part.y, last_part.x))]
+
         self.refresh()
+
         return self.snake_head.y, self.snake_head.x
 
     def move_snake_backwards(self):
@@ -326,9 +419,8 @@ class Bash:
         self.snake_head.decrement_y(self)
 
         # Updates the screen to move the X forward
-        self.add_char(self.snake_head.y, self.snake_head.x)
+        self.add_char(self.snake_head.y, self.snake_head.x, 'X')
         self.del_char(prev_head, self.snake_head.x)
-        self.refresh()
         return self.snake_head.y, self.snake_head.x
 
     def move_snake_right(self):
@@ -340,9 +432,8 @@ class Bash:
         self.snake_head.increment_x(self)
 
         # Updates the screen to move the X forward
-        self.add_char(self.snake_head.y, self.snake_head.x)
+        self.add_char(self.snake_head.y, self.snake_head.x, 'X')
         self.del_char(self.snake_head.y, prev_head)
-        self.refresh()
         return self.snake_head.y, self.snake_head.x
 
     def move_snake_left(self):
@@ -354,16 +445,16 @@ class Bash:
         self.snake_head.decrement_x(self)
 
         # Updates the screen to move the X forward
-        self.add_char(self.snake_head.y, self.snake_head.x)
+        self.add_char(self.snake_head.y, self.snake_head.x, 'X')
         self.del_char(self.snake_head.y, prev_head)
-        self.refresh()
         return self.snake_head.y, self.snake_head.x
 
-    def add_char(self, y, x, char='X'):
+    def add_char(self, y, x, char):
         """
         Adds a character at given coordinates
         :param y: y coordinate of char to add
         :param x: x coordinate of char to add
+        :param: char: the type of body part of the snake (X = head, O = body)
         :return: None
         """
         self.stdscr.addstr(y, x, char)
@@ -376,6 +467,15 @@ class Bash:
         :return: None
         """
         self.stdscr.addstr(y, x, ' ')
+
+    def get_char(self, y, x):
+        """
+        Returns the character at the given coordinates
+        :param x: x coordinate of screen
+        :param y: y coordinate of screen
+        :return: The character at the given coordinates
+        """
+        return chr(self.stdscr.inch(y, x))
 
     def clear(self):
         """
