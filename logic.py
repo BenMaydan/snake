@@ -466,6 +466,22 @@ class Bash:
         # Updates the screen to move the X forward
         self.add_char(self.snake_head.y, self.snake_head.x, 'X')
         self.del_char(self.snake_head.y, prev_head)
+
+        # Adds body part right behind the head
+        behind_the_head = SnakeBody(self.snake_head.y, self.snake_head.x + 1, 'n')
+        # Appends body part to snake_dict and snake_list
+        self.snake_dict[id((self.snake_head.y, self.snake_head.x + 1))] = behind_the_head
+        self.snake_list.insert(0, behind_the_head)
+        # Creates char on the screen (body part right behind the head
+        self.add_char(self.snake_head.y, self.snake_head.x + 1, 'O')
+
+        # # Deletes the last character of the snake on the screen
+        last_part = self.snake_list[-1]
+        self.del_char(last_part.y, last_part.x)
+        # Removes the last character of the snake from self.snake_list and self.snake-dict
+        self.snake_list.remove(last_part)
+        del self.snake_dict[id((last_part.y, last_part.x))]
+
         return self.snake_head.y, self.snake_head.x
 
     def add_body_part(self, y, x, direction, idx=-1):
