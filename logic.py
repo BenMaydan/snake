@@ -286,14 +286,16 @@ class Bash:
         """
         mapping = {
                     curses.KEY_UP:lambda: self.set_direction('n'),
-                    curses.KEY_DOWN:lambda: self.set_direction('s'),
                     curses.KEY_LEFT:lambda: self.set_direction('w'),
                     curses.KEY_RIGHT:lambda: self.set_direction('e'),
                     }
         try:
             mapping[key_pressed]()
         except KeyError:
-            pass
+            # This is to ensure the user does not accidentally bump into themselves when they are going forwards
+            # The user is only allowed to move down if they are already facing right or left
+            if key_pressed == curses.KEY_DOWN and self.direction != 'n':
+                self.set_direction('s')
 
     def set_direction(self, direction):
         bool_check(["'{}'".format(direction)], " in {}".format(self.directions.values()))
@@ -323,6 +325,8 @@ class Bash:
             self.refresh()
         elif self.direction == 's':
             self.move_snake_backwards()
+            # Refreshes the screen
+            self.refresh()
         elif self.direction == 'w':
             self.move_snake_left()
             # Refreshes the screen
@@ -424,6 +428,22 @@ class Bash:
         # Updates the screen to move the X forward
         self.add_char(self.snake_head.y, self.snake_head.x, 'X')
         self.del_char(prev_head, self.snake_head.x)
+
+        # Adds body part right behind the head
+        behind_the_head = SnakeBody(self.snake_head.y - 1, self.snake_head.x, 'n')
+        # Appends body part to snake_dict and snake_list
+        self.snake_dict[id((self.snake_head.y - 1, self.snake_head.x))] = behind_the_head
+        self.snake_list.insert(0, behind_the_head)
+        # Creates char on the screen (body part right behind the head
+        self.add_char(self.snake_head.y - 1, self.snake_head.x, 'O')
+
+        # # Deletes the last character of the snake on the screen
+        last_part = self.snake_list[-1]
+        self.del_char(last_part.y, last_part.x)
+        # Removes the last character of the snake from self.snake_list and self.snake-dict
+        self.snake_list.remove(last_part)
+        del self.snake_dict[id((last_part.y, last_part.x))]
+
         return self.snake_head.y, self.snake_head.x
 
     def move_snake_right(self):
