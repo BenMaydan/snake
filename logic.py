@@ -40,6 +40,36 @@ def bool_check(objects, boolean):
             return evaluated
 
 
+def snake_body_collision(bash, head):
+    """
+    Checks for a collision with the snake's own body
+    Terminates the program if there is collision
+    :param bash: Bash instance
+    :param head: Snake head
+    :return: None
+    """
+    # Checks for a collision with the snake's own body
+    for piece in bash.snake_list:
+        if head.y == piece.y and head.x == piece.x:
+            bash.terminate_curses()
+            print("GAME OVER! YOU BUMPED INTO YOURSELF!")
+            sys.exit()
+
+
+def snake_border_collision(bash, xcheck):
+    """
+    Checks is the head of snake is colliding with the bash
+    :param bash: Bash instance
+    :param xcheck: X coordinate used to check collision before mutating the x coordinate
+    :return: None
+    """
+    # Checks for a collision with the border of the terminal
+    if xcheck == curses.COLS:
+        bash.terminate_curses()
+        print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+        sys.exit()
+
+
 class cycle:
     def __init__(self, c):
         self._c = c
@@ -84,22 +114,19 @@ class SnakeHead:
         # Before mutating self.x, this xcheck is a third party variable used to check collision
         xcheck = self.x + 1
 
-        # Checks for a collision with the snake's own body
-        for piece in bash.snake_list:
-            if self.y == piece.y and self.x == piece.x:
-                bash.terminate_curses()
-                print("GAME OVER! YOU BUMPED INTO YOURSELF!")
-                sys.exit()
+        # Collision checks if the snake head collides with a piece of it's body
+        # The program terminates if true
+        snake_body_collision(bash, self)
 
         # Checks for a collision with the border of the terminal
         if xcheck == curses.COLS:
             bash.terminate_curses()
             print("GAME OVER! YOU BUMPED INTO THE BORDER!")
             sys.exit()
-        # No collision with the border of the terminal
-        else:
-            self.x += 1
-            return self.x
+
+        # This only happens if there is no collision
+        self.x += 1
+        return self.x
 
     def decrement_x(self, bash):
         """
@@ -110,12 +137,9 @@ class SnakeHead:
         # Before mutating self.x, this xcheck is a third party variable used to check collision
         xcheck = self.x - 1
 
-        # Checks for a collision with the snake's own body
-        for piece in bash.snake_list:
-            if self.y == piece.y and self.x == piece.x:
-                bash.terminate_curses()
-                print("GAME OVER! YOU BUMPED INTO YOURSELF!")
-                sys.exit()
+        # Collision checks if the snake head collides with a piece of it's body
+        # The program terminates if true
+        snake_body_collision(bash, self)
 
         # Checks for a collision with the border of the terminal
         if xcheck < 0:
@@ -136,12 +160,9 @@ class SnakeHead:
         # Before mutating self.y, this ycheck is a third party variable used to check collision
         ycheck = self.y - 1
 
-        # Checks for a collision with the snake's own body
-        for piece in bash.snake_list:
-            if self.y == piece.y and self.x == piece.x:
-                bash.terminate_curses()
-                print("GAME OVER! YOU BUMPED INTO YOURSELF!")
-                sys.exit()
+        # Collision checks if the snake head collides with a piece of it's body
+        # The program terminates if true
+        snake_body_collision(bash, self)
 
         # Checks for a collision with the border of the terminal
         if ycheck < 0:
@@ -162,12 +183,9 @@ class SnakeHead:
         # Before mutating self.y, this ycheck is a third party variable used to check collision
         ycheck = self.y + 1
 
-        # Checks for a collision with the snake's own body
-        for piece in bash.snake_list:
-            if self.y == piece.y and self.x == piece.x:
-                bash.terminate_curses()
-                print("GAME OVER! YOU BUMPED INTO YOURSELF!")
-                sys.exit()
+        # Collision checks if the snake head collides with a piece of it's body
+        # The program terminates if true
+        snake_body_collision(bash, self)
 
         # Checks for a collision with the border of the terminal
         if ycheck == curses.LINES:
@@ -211,8 +229,10 @@ class Bash:
         # Legal coordinates = (0, 0) -> (curses.LINES - 1, curses.COLS - 1)
         # Curses counts coordinates from the top left at(0, 0)
 
-        # Used to test if the keys being pressed are registered
-        self.pressed = []
+        # This score will be printed at the end
+        # It is incremented every time the snake eats a piece of food
+        # And at the end of the game it is multiplied by how many seconds you stayed alive
+        self.score = 0
 
     def start_curses(self):
         """
@@ -256,9 +276,7 @@ class Bash:
         Will return the current key being pressed
         :return: A dict with 'W', 'A', 'D', and the arrows and either 0 or 1 depending on if the key is being pressed or not
         """
-        gotten = self.stdscr.getch()
-        self.pressed.append(gotten)
-        return gotten
+        return self.stdscr.getch()
 
     def capture_keys(self, key_pressed):
         """
@@ -296,18 +314,19 @@ class Bash:
         """
         # Moves the head of the snake depending on the current direction
         if self.direction == 'n':
-            # Moves the snake head forward one
             self.move_snake_fowards()
-
             # Refreshes the screen
-            # self.refresh()
-
+            self.refresh()
         elif self.direction == 'e':
             self.move_snake_right()
+            # Refreshes the screen
+            self.refresh()
         elif self.direction == 's':
             self.move_snake_backwards()
         elif self.direction == 'w':
             self.move_snake_left()
+            # Refreshes the screen
+            self.refresh()
 
         # Makes all of the body parts of the snake follow the snake
         # for body_part in self.snake:
@@ -315,15 +334,6 @@ class Bash:
 
         self.increment_tick()
         return self.get_tick()
-
-    def closest_body_part(self, x, y):
-        """
-        Returns the closest body part to the snake
-        :param x: x coordinate of body part
-        :param y: y coordinate of body part
-        :return: closest NEW body part to the coordinates of (x, y) given
-        """
-        pass
 
     def create_snake(self):
         """
@@ -394,19 +404,12 @@ class Bash:
         # Creates char on the screen (body part right behind the head
         self.add_char(self.snake_head.y + 1, self.snake_head.x, 'O')
 
-        # # Deletes the last character of the snake
+        # # Deletes the last character of the snake on the screen
         last_part = self.snake_list[-1]
-        # print(self.snake_list)
-        # print(last_part.y, last_part.x)
-        # print(self.snake_head.y, self.snake_head.x)
-        # print()
-        
         self.del_char(last_part.y, last_part.x)
         # Removes the last character of the snake from self.snake_list and self.snake-dict
         self.snake_list.remove(last_part)
         del self.snake_dict[id((last_part.y, last_part.x))]
-
-        self.refresh()
 
         return self.snake_head.y, self.snake_head.x
 
@@ -434,6 +437,22 @@ class Bash:
         # Updates the screen to move the X forward
         self.add_char(self.snake_head.y, self.snake_head.x, 'X')
         self.del_char(self.snake_head.y, prev_head)
+
+        # Adds body part right behind the head
+        behind_the_head = SnakeBody(self.snake_head.y, self.snake_head.x - 1, 'n')
+        # Appends body part to snake_dict and snake_list
+        self.snake_dict[id((self.snake_head.y, self.snake_head.x - 1))] = behind_the_head
+        self.snake_list.insert(0, behind_the_head)
+        # Creates char on the screen (body part right behind the head
+        self.add_char(self.snake_head.y, self.snake_head.x - 1, 'O')
+
+        # # Deletes the last character of the snake on the screen
+        last_part = self.snake_list[-1]
+        self.del_char(last_part.y, last_part.x)
+        # Removes the last character of the snake from self.snake_list and self.snake-dict
+        self.snake_list.remove(last_part)
+        del self.snake_dict[id((last_part.y, last_part.x))]
+
         return self.snake_head.y, self.snake_head.x
 
     def move_snake_left(self):
@@ -448,6 +467,16 @@ class Bash:
         self.add_char(self.snake_head.y, self.snake_head.x, 'X')
         self.del_char(self.snake_head.y, prev_head)
         return self.snake_head.y, self.snake_head.x
+
+    def add_body_part(self, y, x, direction, idx=-1):
+        """
+        Adds a snake body part at coordinates (y, x) to self.snake_list, self.snake_dict
+        :param y:
+        :param x:
+        :param direction:
+        :param idx:
+        :return:
+        """
 
     def add_char(self, y, x, char):
         """
