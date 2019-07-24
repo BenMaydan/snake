@@ -53,7 +53,34 @@ def snake_body_collision(bash, head):
         if head.y == piece.y and head.x == piece.x:
             bash.terminate_curses()
             print("GAME OVER! YOU BUMPED INTO YOURSELF!")
+            print(score(bash))
             sys.exit()
+
+
+def snake_food_collision(bash, head):
+    """
+    Checks for collision with snake head and food
+    Since there will not be lots of food on the screen I need to loop over
+    A simple single if statement will do the trick
+    :param bash: Bash instance
+    :param head: Snake head
+    :return: True or False
+    """
+    # A simple collision check by checking if the coordinates of the snake head and the food are the same
+    if head.y == bash.food[0] and head.x == bash.food[1]:
+        bash.grow_snake()
+        bash.food_exists = False
+        bash.score += 1
+    return not bash.food_exists
+
+
+def score(bash):
+    """
+    Multiplies score by time spent in the game alive
+    :param bash: Bash instance
+    :return: New score
+    """
+    return "Your score was: " + str(bash.score)
 
 
 class cycle:
@@ -104,10 +131,14 @@ class SnakeHead:
         # The program terminates if true
         snake_body_collision(bash, self)
 
+        # Checks for snake food collision. If there is collision, the snake will grow and score will increase
+        snake_food_collision(bash, self)
+
         # Checks for a collision with the border of the terminal
         if xcheck == curses.COLS:
             bash.terminate_curses()
             print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+            print(score(bash))
             sys.exit()
 
         # This only happens if there is no collision
@@ -127,10 +158,14 @@ class SnakeHead:
         # The program terminates if true
         snake_body_collision(bash, self)
 
+        # Checks for snake food collision. If there is collision, the snake will grow and score will increase
+        snake_food_collision(bash, self)
+
         # Checks for a collision with the border of the terminal
         if xcheck < 0:
             bash.terminate_curses()
             print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+            print(score(bash))
             sys.exit()
         # No collision with the border of the terminal
         else:
@@ -150,10 +185,14 @@ class SnakeHead:
         # The program terminates if true
         snake_body_collision(bash, self)
 
+        # Checks for snake food collision. If there is collision, the snake will grow and score will increase
+        snake_food_collision(bash, self)
+
         # Checks for a collision with the border of the terminal
         if ycheck < 0:
             bash.terminate_curses()
             print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+            print(score(bash))
             sys.exit()
         # No collision with the border of the terminal
         else:
@@ -173,10 +212,14 @@ class SnakeHead:
         # The program terminates if true
         snake_body_collision(bash, self)
 
+        # Checks for snake food collision. If there is collision, the snake will grow and score will increase
+        snake_food_collision(bash, self)
+
         # Checks for a collision with the border of the terminal
         if ycheck == curses.LINES:
             bash.terminate_curses()
             print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+            print(score(bash))
             sys.exit()
         # No collision with the border of the terminal
         else:
@@ -223,12 +266,13 @@ class Bash:
         # This is for the food generation system. This list will hold all of the food
         # And when the snake moves it will check if the head is colliding
         # If the head is colliding the snake will grow and the score will increment by 1
-        self.food = []
+        self.food = (-1, -1)
         self.food_exists = False
 
         # This score will be printed at the end. It is incremented every time the snake eats a piece of food
         # And at the end of the game it is multiplied by how many seconds you stayed alive
         self.score = 0
+        self.time_spent = 1
 
     def start_curses(self):
         """
@@ -281,7 +325,6 @@ class Bash:
         :return: None
         """
         mapping = {
-                    curses.KEY_UP:lambda: self.set_direction('n'),
                     curses.KEY_LEFT:lambda: self.set_direction('w'),
                     curses.KEY_RIGHT:lambda: self.set_direction('e'),
                     }
@@ -292,6 +335,10 @@ class Bash:
             # The user is only allowed to move down if they are already facing right or left
             if key_pressed == curses.KEY_DOWN and self.direction != 'n':
                 self.set_direction('s')
+            # This is to ensure the user does not accidentally bump into themselves when they are going backwards
+            # The user is only allowed to move up if they are already facing right or left
+            elif key_pressed == curses.KEY_UP and self.direction != 's':
+                self.set_direction('n')
 
     def set_direction(self, direction):
         bool_check(["'{}'".format(direction)], " in {}".format(self.directions.values()))
@@ -339,10 +386,10 @@ class Bash:
         # This if statement is for the food generation system
         # Every some amount of ticks, a piece of food is placed
         # At a random (y, x) coordinate on the screen
-        if self.get_tick() == self.food_tick and not self.food_exists:
+        if self.get_tick() == self.food_tick and self.food_exists == False:
             random_y_coordinate = random.randrange(2, curses.LINES - 2)
             random_x_coordinate = random.randrange(2, curses.COLS - 2)
-            self.food.append((random_y_coordinate, random_x_coordinate))
+            self.food = (random_y_coordinate, random_x_coordinate)
 
             # Adds char to the screen
             self.add_char(random_y_coordinate, random_x_coordinate, 'F')
