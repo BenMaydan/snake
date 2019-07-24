@@ -18,7 +18,7 @@ from logic import Bash
 
 
 # Initialization of bash
-bash = Bash()
+bash = Bash(10)
 bash.start_curses()
 
 # Creates the snake

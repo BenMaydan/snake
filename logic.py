@@ -6,8 +6,8 @@
 # Imports go here
 import keyboard
 import curses
+import random
 import sys
-import uuid
 
 
 def instances(objects, object_type):
@@ -54,20 +54,6 @@ def snake_body_collision(bash, head):
             bash.terminate_curses()
             print("GAME OVER! YOU BUMPED INTO YOURSELF!")
             sys.exit()
-
-
-def snake_border_collision(bash, xcheck):
-    """
-    Checks is the head of snake is colliding with the bash
-    :param bash: Bash instance
-    :param xcheck: X coordinate used to check collision before mutating the x coordinate
-    :return: None
-    """
-    # Checks for a collision with the border of the terminal
-    if xcheck == curses.COLS:
-        bash.terminate_curses()
-        print("GAME OVER! YOU BUMPED INTO THE BORDER!")
-        sys.exit()
 
 
 class cycle:
@@ -216,21 +202,31 @@ class SnakeBody:
 
 
 class Bash:
-    def __init__(self):
+    def __init__(self, generate_food):
         # This is for the world tick system
         # This is not needed until I implement food for the snake, which will be a while
         self._tick_value = 0
-
-        # This is used for moving the snake
-        self.directions = cycle(['n', 'e', 's', 'w'])
-        self.direction = 'n'
 
         # Curses coordinates
         # Legal coordinates = (0, 0) -> (curses.LINES - 1, curses.COLS - 1)
         # Curses counts coordinates from the top left at(0, 0)
 
-        # This score will be printed at the end
-        # It is incremented every time the snake eats a piece of food
+        # This is used for moving the snake
+        self.directions = cycle(['n', 'e', 's', 'w'])
+        self.direction = 'n'
+
+        # This value is to see if it is time to generate food
+        # Every tick this value is incremented, unless food has just been generated
+        # In that case, this value is set to 0
+        self.food_tick = generate_food
+
+        # This is for the food generation system. This list will hold all of the food
+        # And when the snake moves it will check if the head is colliding
+        # If the head is colliding the snake will grow and the score will increment by 1
+        self.food = []
+        self.food_exists = False
+
+        # This score will be printed at the end. It is incremented every time the snake eats a piece of food
         # And at the end of the game it is multiplied by how many seconds you stayed alive
         self.score = 0
 
@@ -304,6 +300,14 @@ class Bash:
     def get_tick(self):
         return self._tick_value
 
+    def reset_tick(self):
+        """
+        Everytime food is generated self.tick_value will reset so I can check the next time
+        If food should be generated
+        :return: None
+        """
+        self._tick_value = 0
+
     def increment_tick(self):
         self._tick_value += 1
         return self._tick_value
@@ -332,8 +336,23 @@ class Bash:
             # Refreshes the screen
             self.refresh()
 
-        # Makes all of the body parts of the snake follow the snake
-        # for body_part in self.snake:
+        # This if statement is for the food generation system
+        # Every some amount of ticks, a piece of food is placed
+        # At a random (y, x) coordinate on the screen
+        if self.get_tick() == self.food_tick and not self.food_exists:
+            random_y_coordinate = random.randrange(2, curses.LINES - 2)
+            random_x_coordinate = random.randrange(2, curses.COLS - 2)
+            self.food.append((random_y_coordinate, random_x_coordinate))
+
+            # Adds char to the screen
+            self.add_char(random_y_coordinate, random_x_coordinate, 'F')
+            self.reset_tick()
+
+            # Used so food will not spawn until this food has been eaten
+            self.food_exists = True
+
+            # Finally, after all the random coordinates have been found and a char was added, the screen will refresh
+            self.refresh()
 
 
         self.increment_tick()
@@ -504,16 +523,6 @@ class Bash:
 
         return self.snake_head.y, self.snake_head.x
 
-    def add_body_part(self, y, x, direction, idx=-1):
-        """
-        Adds a snake body part at coordinates (y, x) to self.snake_list, self.snake_dict
-        :param y:
-        :param x:
-        :param direction:
-        :param idx:
-        :return:
-        """
-
     def add_char(self, y, x, char):
         """
         Adds a character at given coordinates
@@ -542,7 +551,7 @@ class Bash:
         """
         return chr(self.stdscr.inch(y, x))
 
-    def clear(self):
+    def clear_screen(self):
         """
         Clears the terminal
         :return: None
