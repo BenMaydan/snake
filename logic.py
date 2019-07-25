@@ -107,6 +107,21 @@ def snake_food_collision(bash, head):
     return not bash.food_exists
 
 
+def update_score_on_screen(bash):
+    """
+    Updates the characters at the top left to say "score = (current score)"
+    :param bash: Bash instance
+    :return: User's current score
+    """
+    x = 0
+    letters = ['S', 'c', 'o', 'r', 'e', ' ', '=', ' ', str(bash.score)]
+    for letter in letters:
+        bash.del_char(0, x)
+        bash.add_char(0, x, letter)
+        x += 1
+    bash.refresh()
+
+
 def score(bash):
     """
     Multiplies score by time spent in the game alive
@@ -432,6 +447,10 @@ class Bash:
 
             # Used so food will not spawn until this food has been eaten
             self.food_exists = True
+
+            # There is no need to update the score on the screen every tick
+            # Since bash.score only gets incremented every time food is eated
+            update_score_on_screen(self)
 
             # Finally, after all the random coordinates have been found and a char was added, the screen will refresh
             self.refresh()
