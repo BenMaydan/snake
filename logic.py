@@ -73,12 +73,19 @@ def snake_body_collision(bash, head):
     :param head: Snake head
     :return: None
     """
+    with open('highscore.txt', 'r') as f:
+        high = f.read()
+    if bash.score > int(high):
+        with open('highscore.txt', 'w') as f:
+            f.write(str(bash.score))
+
     # Checks for a collision with the snake's own body
     for piece in bash.snake_list:
         if head.y == piece.y and head.x == piece.x:
             bash.terminate_curses()
             print("GAME OVER! YOU BUMPED INTO YOURSELF!")
             print(score(bash))
+            print(highscore(high))
             sys.exit()
 
 
@@ -133,6 +140,10 @@ def score(bash):
     :return: New score
     """
     return "Your score was: " + str(bash.score)
+
+
+def highscore(high):
+    return "Your highscore is: " + str(high)
 
 
 class cycle:
@@ -297,10 +308,11 @@ class SnakeBody:
 
 
 class Bash:
-    def __init__(self, generate_food):
+    def __init__(self, generate_food, sleep):
         # This is for the world tick system
         # This is not needed until I implement food for the snake, which will be a while
         self._tick_value = 0
+        self.sleep = sleep
 
         # Curses coordinates
         # Legal coordinates = (0, 0) -> (curses.LINES - 1, curses.COLS - 1)

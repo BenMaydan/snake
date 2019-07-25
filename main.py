@@ -18,7 +18,7 @@ from logic import Bash
 
 
 # Initialization of bash
-bash = Bash(10)
+bash = Bash(10, 0.1)
 bash.start_curses()
 
 # Mandatory two refreshes
