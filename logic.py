@@ -40,6 +40,30 @@ def bool_check(objects, boolean):
             return evaluated
 
 
+def opposite_direction(facing, dir):
+    """
+    Returns the opposite direction
+    N - S
+    E - W
+    S - N
+    W - E
+    :param facing: The direction the snake is facing
+    :param dir: The direction/key the user pressed
+    :return:
+    """
+    # Checks if for example n == s or e == w to prevent the ability from turning the opposite direction the user is currently going
+    return facing == {curses.KEY_UP:curses.KEY_DOWN, curses.KEY_RIGHT:curses.KEY_LEFT, curses.KEY_DOWN:curses.KEY_UP, curses.KEY_LEFT:curses.KEY_RIGHT}[dir]
+
+
+def key_exists(dictionary, key_to_check):
+    """
+    Raises KeyError if key_to_check does not exist in dictionary
+    :return: None
+    """
+    if key_to_check not in dictionary:
+        raise KeyError()
+
+
 def snake_body_collision(bash, head):
     """
     Checks for a collision with the snake's own body
@@ -325,20 +349,22 @@ class Bash:
         :return: None
         """
         mapping = {
+                    curses.KEY_UP: lambda: self.set_direction('n'),
+                    curses.KEY_DOWN:lambda: self.set_direction('s'),
                     curses.KEY_LEFT:lambda: self.set_direction('w'),
                     curses.KEY_RIGHT:lambda: self.set_direction('e'),
                     }
         try:
-            mapping[key_pressed]()
+            # Raises key error if key does not exist in mapping dict
+            # I.E. user pressed W or A
+            key_exists(mapping, key_pressed)
         except KeyError:
-            # This is to ensure the user does not accidentally bump into themselves when they are going forwards
-            # The user is only allowed to move down if they are already facing right or left
-            if key_pressed == curses.KEY_DOWN and self.direction != 'n':
-                self.set_direction('s')
-            # This is to ensure the user does not accidentally bump into themselves when they are going backwards
-            # The user is only allowed to move up if they are already facing right or left
-            elif key_pressed == curses.KEY_UP and self.direction != 's':
-                self.set_direction('n')
+            pass
+        else:
+            # This is to ensure the user does not accidentally bump into themselves
+            # when they are facing a direction and click a key to go in the opposite direction
+            if not opposite_direction({'n':curses.KEY_UP, 'e':curses.KEY_RIGHT, 's':curses.KEY_DOWN, 'w':curses.KEY_LEFT}[self.direction], key_pressed):
+                mapping[key_pressed]()
 
     def set_direction(self, direction):
         bool_check(["'{}'".format(direction)], " in {}".format(self.directions.values()))
