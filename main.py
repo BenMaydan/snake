@@ -21,14 +21,17 @@ from logic import Bash
 bash = Bash(10)
 bash.start_curses()
 
+# Mandatory two refreshes
+bash.refresh()
+bash.refresh()
+
 # Creates the snake
 bash.create_snake()
 
 try:
     while True:
         # Captures keys
-        result = bash.getch()
-        bash.capture_keys(result)
+        bash.capture_keys(bash.getch())
 
         # Acts based off of keys
         bash.tick()

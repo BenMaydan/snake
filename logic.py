@@ -51,7 +51,8 @@ def opposite_direction(facing, dir):
     :param dir: The direction/key the user pressed
     :return:
     """
-    # Checks if for example n == s or e == w to prevent the ability from turning the opposite direction the user is currently going
+    # Checks if for example n == s or e == w
+    # to prevent the ability from turning the opposite direction the user is currently going
     return facing == {curses.KEY_UP:curses.KEY_DOWN, curses.KEY_RIGHT:curses.KEY_LEFT, curses.KEY_DOWN:curses.KEY_UP, curses.KEY_LEFT:curses.KEY_RIGHT}[dir]
 
 
@@ -92,12 +93,15 @@ def snake_food_collision(bash, head):
     """
     # A simple collision check by checking if the coordinates of the snake head and the food are the same
     if head.y == bash.food[0] and head.x == bash.food[1]:
-        bash.grow_snake()
-
         # This is a test to see if the snake can actually grow
         # This can be commented out safely
-        # for x in range(10):
-        #    bash.grow_snake()
+        for x in range(10):
+            try:
+                bash.grow_snake()
+            # curses._curses_error is not accessible so I need to catch all errors
+            except:
+                # Breaks the loop of snake body pieces to grow to avoid unnecessary computation
+                break
 
         bash.food_exists = False
         bash.score += 1
@@ -417,7 +421,7 @@ class Bash:
         """
         # Moves the head of the snake depending on the current direction
         if self.direction == 'n':
-            self.move_snake_fowards()
+            self.move_snake_forwards()
             # Refreshes the screen
             self.refresh()
         elif self.direction == 'e':
@@ -454,7 +458,6 @@ class Bash:
 
             # Finally, after all the random coordinates have been found and a char was added, the screen will refresh
             self.refresh()
-
 
         self.increment_tick()
         return self.get_tick()
@@ -495,9 +498,10 @@ class Bash:
     def grow_snake(self):
         """
         Grows an O onto the end of the snake
-        :return:
+        :return: None
         """
         last_part = self.snake_list[-1]
+        second_to_last_part = self.snake_list[-2]
         new_part = SnakeBody(last_part.y - 1, last_part.x, 'n')
 
         # Appends body part to snake_dict and snake_list
@@ -508,7 +512,7 @@ class Bash:
         self.add_char(new_part.y, new_part.x, 'O')
         self.refresh()
 
-    def move_snake_fowards(self):
+    def move_snake_forwards(self):
         """
         Moves the snake forward one character
         :return: (y, x)
@@ -528,12 +532,16 @@ class Bash:
         # Creates char on the screen (body part right behind the head
         self.add_char(self.snake_head.y + 1, self.snake_head.x, 'O')
 
-        # # Deletes the last character of the snake on the screen
+        # Deletes the last character of the snake on the screen
         last_part = self.snake_list[-1]
-        self.del_char(last_part.y, last_part.x)
-        # Removes the last character of the snake from self.snake_list and self.snake-dict
-        self.snake_list.remove(last_part)
-        del self.snake_dict[id((last_part.y, last_part.x))]
+        try:
+            self.del_char(last_part.y, last_part.x)
+        except:
+            self.snake_list.pop(-1)
+        else:
+            # Removes the last character of the snake from self.snake_list and self.snake-dict
+            self.snake_list.remove(last_part)
+            del self.snake_dict[id((last_part.y, last_part.x))]
 
         return self.snake_head.y, self.snake_head.x
 
@@ -559,10 +567,14 @@ class Bash:
 
         # # Deletes the last character of the snake on the screen
         last_part = self.snake_list[-1]
-        self.del_char(last_part.y, last_part.x)
-        # Removes the last character of the snake from self.snake_list and self.snake-dict
-        self.snake_list.remove(last_part)
-        del self.snake_dict[id((last_part.y, last_part.x))]
+        try:
+            self.del_char(last_part.y, last_part.x)
+        except:
+            self.snake_list.pop(-1)
+        else:
+            # Removes the last character of the snake from self.snake_list and self.snake-dict
+            self.snake_list.remove(last_part)
+            del self.snake_dict[id((last_part.y, last_part.x))]
 
         return self.snake_head.y, self.snake_head.x
 
@@ -588,10 +600,14 @@ class Bash:
 
         # # Deletes the last character of the snake on the screen
         last_part = self.snake_list[-1]
-        self.del_char(last_part.y, last_part.x)
-        # Removes the last character of the snake from self.snake_list and self.snake-dict
-        self.snake_list.remove(last_part)
-        del self.snake_dict[id((last_part.y, last_part.x))]
+        try:
+            self.del_char(last_part.y, last_part.x)
+        except:
+            self.snake_list.pop(-1)
+        else:
+            # Removes the last character of the snake from self.snake_list and self.snake-dict
+            self.snake_list.remove(last_part)
+            del self.snake_dict[id((last_part.y, last_part.x))]
 
         return self.snake_head.y, self.snake_head.x
 
@@ -617,10 +633,14 @@ class Bash:
 
         # # Deletes the last character of the snake on the screen
         last_part = self.snake_list[-1]
-        self.del_char(last_part.y, last_part.x)
-        # Removes the last character of the snake from self.snake_list and self.snake-dict
-        self.snake_list.remove(last_part)
-        del self.snake_dict[id((last_part.y, last_part.x))]
+        try:
+            self.del_char(last_part.y, last_part.x)
+        except:
+            self.snake_list.pop(-1)
+        else:
+            # Removes the last character of the snake from self.snake_list and self.snake-dict
+            self.snake_list.remove(last_part)
+            del self.snake_dict[id((last_part.y, last_part.x))]
 
         return self.snake_head.y, self.snake_head.x
 
