@@ -93,8 +93,17 @@ def snake_food_collision(bash, head):
     # A simple collision check by checking if the coordinates of the snake head and the food are the same
     if head.y == bash.food[0] and head.x == bash.food[1]:
         bash.grow_snake()
+
+        # This is a test to see if the snake can actually grow
+        # This can be commented out safely
+        # for x in range(10):
+        #    bash.grow_snake()
+
         bash.food_exists = False
         bash.score += 1
+
+        # Resets the tick so the food can generate again
+        bash.reset_tick()
     return not bash.food_exists
 
 
@@ -412,7 +421,7 @@ class Bash:
         # This if statement is for the food generation system
         # Every some amount of ticks, a piece of food is placed
         # At a random (y, x) coordinate on the screen
-        if self.get_tick() == self.food_tick and self.food_exists == False:
+        if self.get_tick() == self.food_tick and self.food_exists is False:
             random_y_coordinate = random.randrange(2, curses.LINES - 2)
             random_x_coordinate = random.randrange(2, curses.COLS - 2)
             self.food = (random_y_coordinate, random_x_coordinate)
