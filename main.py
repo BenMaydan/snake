@@ -35,7 +35,11 @@ try:
 
         # Acts based off of keys
         bash.tick()
-        time.sleep(0.1)
+        try:
+            time.sleep(bash.sleep)
+        except ValueError:
+            # This means bash.sleep went negative
+            time.sleep(0.03)
 
         # # print("Pressed key:", bash.getch())
         # # Performs commands based on which is key is being pressed

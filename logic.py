@@ -73,19 +73,13 @@ def snake_body_collision(bash, head):
     :param head: Snake head
     :return: None
     """
-    with open('highscore.txt', 'r') as f:
-        high = f.read()
-    if bash.score > int(high):
-        with open('highscore.txt', 'w') as f:
-            f.write(str(bash.score))
-
     # Checks for a collision with the snake's own body
     for piece in bash.snake_list:
         if head.y == piece.y and head.x == piece.x:
             bash.terminate_curses()
             print("GAME OVER! YOU BUMPED INTO YOURSELF!")
             print(score(bash))
-            print(highscore(high))
+            print(highscore(bash))
             sys.exit()
 
 
@@ -105,6 +99,7 @@ def snake_food_collision(bash, head):
         for x in range(10):
             try:
                 bash.grow_snake()
+                bash.sleep -= 0.01
             # curses._curses_error is not accessible so I need to catch all errors
             except:
                 # Breaks the loop of snake body pieces to grow to avoid unnecessary computation
@@ -142,7 +137,17 @@ def score(bash):
     return "Your score was: " + str(bash.score)
 
 
-def highscore(high):
+def highscore(bash):
+    """
+    Returns the text to print for a highscore
+    :return: Text
+    """
+    with open('highscore.txt', 'r') as f:
+        high = f.read()
+    if bash.score > int(high):
+        with open('highscore.txt', 'w') as f:
+            high = bash.score
+            f.write(str(bash.score))
     return "Your highscore is: " + str(high)
 
 
@@ -202,6 +207,7 @@ class SnakeHead:
             bash.terminate_curses()
             print("GAME OVER! YOU BUMPED INTO THE BORDER!")
             print(score(bash))
+            print(highscore(bash))
             sys.exit()
 
         # This only happens if there is no collision
@@ -229,6 +235,7 @@ class SnakeHead:
             bash.terminate_curses()
             print("GAME OVER! YOU BUMPED INTO THE BORDER!")
             print(score(bash))
+            print(highscore(bash))
             sys.exit()
         # No collision with the border of the terminal
         else:
@@ -256,6 +263,7 @@ class SnakeHead:
             bash.terminate_curses()
             print("GAME OVER! YOU BUMPED INTO THE BORDER!")
             print(score(bash))
+            print(highscore(bash))
             sys.exit()
         # No collision with the border of the terminal
         else:
@@ -283,6 +291,7 @@ class SnakeHead:
             bash.terminate_curses()
             print("GAME OVER! YOU BUMPED INTO THE BORDER!")
             print(score(bash))
+            print(highscore(bash))
             sys.exit()
         # No collision with the border of the terminal
         else:
