@@ -99,11 +99,11 @@ def snake_food_collision(bash, head):
         for x in range(10):
             try:
                 bash.grow_snake()
-                bash.sleep -= 0.01
             # curses._curses_error is not accessible so I need to catch all errors
             except:
                 # Breaks the loop of snake body pieces to grow to avoid unnecessary computation
                 break
+        bash.sleep -= 0.001
 
         bash.food_exists = False
         bash.score += 1
@@ -464,6 +464,12 @@ class Bash:
         if self.get_tick() == self.food_tick and self.food_exists is False:
             random_y_coordinate = random.randrange(2, curses.LINES - 2)
             random_x_coordinate = random.randrange(2, curses.COLS - 2)
+
+            # This while loop is a sanity check to make sure the food does not spawn on the snake
+            while self.get_char(random_y_coordinate, random_x_coordinate) in ('X', 'O'):
+                random_y_coordinate = random.randrange(2, curses.LINES - 2)
+                random_x_coordinate = random.randrange(2, curses.COLS - 2)
+
             self.food = (random_y_coordinate, random_x_coordinate)
 
             # Adds char to the screen

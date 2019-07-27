@@ -28,28 +28,22 @@ bash.refresh()
 # Creates the snake
 bash.create_snake()
 
+# Initial key press
+key = curses.KEY_UP
+
 try:
     while True:
         # Captures keys
         bash.capture_keys(bash.getch())
 
-        # Acts based off of keys
+        # Acts based off of key pressed
+        # Else it will default to keep moving
         bash.tick()
         try:
             time.sleep(bash.sleep)
         except ValueError:
             # This means bash.sleep went negative
             time.sleep(0.03)
-
-        # # print("Pressed key:", bash.getch())
-        # # Performs commands based on which is key is being pressed
-        # for x in range(25):
-        #     result = bash.getch()
-        #     bash.capture_keys(result)
-        #     if result > 0:
-        #         bash.tick()
-        #     time.sleep(0.01)
-        #     #bash.grow_snake()
 
 except Exception as e:
     bash.terminate_curses()
