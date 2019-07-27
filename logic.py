@@ -300,12 +300,9 @@ class SnakeHead:
 
 
 class SnakeBody:
-    def __init__(self, y, x, direction):
-        if direction not in ['n', 'e', 's', 'w']:
-            raise ValueError("Snake body direction {} must be one of the following {}".format(direction, ['n', 'e', 's', 'w']))
+    def __init__(self, y, x):
         self.y = y
         self.x = x
-        self.direction = direction
 
     def follow(self, bash):
         """
@@ -498,24 +495,21 @@ class Bash:
         self.snake_head = SnakeHead(int(curses.LINES / 2), int(curses.COLS / 2))
         # List of snake body parts
         # Snake body parts will be appended to this list
-        self.snake_dict = {id((self.snake_head.y + 1, self.snake_head.x)):SnakeBody(self.snake_head.y + 1, self.snake_head.x, 'n')}
-        self.snake_list = [SnakeBody(self.snake_head.y + 1, self.snake_head.x, 'n')]
+        self.snake_list = [SnakeBody(self.snake_head.y + 1, self.snake_head.x)]
 
         # Prints the snake head on the screen
         self.add_char(self.snake_head.y, self.snake_head.x, 'X')
 
         # Adds body part right behind the head
-        behind_the_head = SnakeBody(self.snake_head.y + 1, self.snake_head.x, 'n')
-        # Appends body part to snake_dict and snake_list
-        self.snake_dict[id((self.snake_head.y + 1, self.snake_head.x))] = behind_the_head
+        behind_the_head = SnakeBody(self.snake_head.y + 1, self.snake_head.x)
+        # Appends body part to snake_list
         self.snake_list.append(behind_the_head)
         # Actually adds the body part right behind the head
         self.add_char(self.snake_head.y + 1, self.snake_head.x, 'O')
 
         # Creates a second body part right behind the head
-        second_behind_the_head = SnakeBody(self.snake_head.y + 2, self.snake_head.x, 'n')
-        # Appends body part to snake_dict and snake_list
-        self.snake_dict[id((self.snake_head.y + 2, self.snake_head.x))] = second_behind_the_head
+        second_behind_the_head = SnakeBody(self.snake_head.y + 2, self.snake_head.x)
+        # Appends body part to snake_list
         self.snake_list.append(second_behind_the_head)
         # Actually adds the body part right behind the head
         self.add_char(self.snake_head.y + 2, self.snake_head.x, 'O')
@@ -527,12 +521,26 @@ class Bash:
         Grows an O onto the end of the snake
         :return: None
         """
-        last_part = self.snake_list[-1]
         second_to_last_part = self.snake_list[-2]
-        new_part = SnakeBody(last_part.y - 1, last_part.x, 'n')
+        last_part = self.snake_list[-1]
+        # Determines the direction to insert the new snake body part
+        # Based off of the directions of the second to last part and the last part
+        if second_to_last_part.y < last_part.y:
+            # This means the second to last part is underneath the last part
+            dir_tuple = (last_part.y + 1, last_part.x)
+        elif second_to_last_part.y > last_part.y:
+            # This means the second to last part is above the last part
+            dir_tuple = (last_part.y - 1, last_part.x)
+        elif second_to_last_part.x < last_part.x:
+            # This means the second to last part is to the left of the last part
+            dir_tuple = (last_part.y, last_part.x - 1)
+        elif second_to_last_part.x > last_part.x:
+            # This means the second to last part is to the right of the last part
+            dir_tuple = (last_part.y, last_part.x + 1)
 
-        # Appends body part to snake_dict and snake_list
-        self.snake_dict[id((new_part.y, new_part.x))] = new_part
+        new_part = SnakeBody(dir_tuple[0], dir_tuple[1])
+
+        # Appends body part to snake_list
         self.snake_list.append(new_part)
 
         # Creates char on the screen (body part right behind the head
@@ -552,9 +560,8 @@ class Bash:
         self.del_char(prev_head, self.snake_head.x)
 
         # Adds body part right behind the head
-        behind_the_head = SnakeBody(self.snake_head.y + 1, self.snake_head.x, 'n')
-        # Appends body part to snake_dict and snake_list
-        self.snake_dict[id((self.snake_head.y + 1, self.snake_head.x))] = behind_the_head
+        behind_the_head = SnakeBody(self.snake_head.y + 1, self.snake_head.x)
+        # Appends body part to snake_list
         self.snake_list.insert(0, behind_the_head)
         # Creates char on the screen (body part right behind the head
         self.add_char(self.snake_head.y + 1, self.snake_head.x, 'O')
@@ -566,9 +573,8 @@ class Bash:
         except:
             self.snake_list.pop(-1)
         else:
-            # Removes the last character of the snake from self.snake_list and self.snake-dict
+            # Removes the last character of the snake from self.snake_list
             self.snake_list.remove(last_part)
-            del self.snake_dict[id((last_part.y, last_part.x))]
 
         return self.snake_head.y, self.snake_head.x
 
@@ -585,9 +591,8 @@ class Bash:
         self.del_char(prev_head, self.snake_head.x)
 
         # Adds body part right behind the head
-        behind_the_head = SnakeBody(self.snake_head.y - 1, self.snake_head.x, 'n')
-        # Appends body part to snake_dict and snake_list
-        self.snake_dict[id((self.snake_head.y - 1, self.snake_head.x))] = behind_the_head
+        behind_the_head = SnakeBody(self.snake_head.y - 1, self.snake_head.x)
+        # Appends body part to snake_list
         self.snake_list.insert(0, behind_the_head)
         # Creates char on the screen (body part right behind the head
         self.add_char(self.snake_head.y - 1, self.snake_head.x, 'O')
@@ -601,7 +606,6 @@ class Bash:
         else:
             # Removes the last character of the snake from self.snake_list and self.snake-dict
             self.snake_list.remove(last_part)
-            del self.snake_dict[id((last_part.y, last_part.x))]
 
         return self.snake_head.y, self.snake_head.x
 
@@ -618,9 +622,8 @@ class Bash:
         self.del_char(self.snake_head.y, prev_head)
 
         # Adds body part right behind the head
-        behind_the_head = SnakeBody(self.snake_head.y, self.snake_head.x - 1, 'n')
-        # Appends body part to snake_dict and snake_list
-        self.snake_dict[id((self.snake_head.y, self.snake_head.x - 1))] = behind_the_head
+        behind_the_head = SnakeBody(self.snake_head.y, self.snake_head.x - 1)
+        # Appends body part to snake_list
         self.snake_list.insert(0, behind_the_head)
         # Creates char on the screen (body part right behind the head
         self.add_char(self.snake_head.y, self.snake_head.x - 1, 'O')
@@ -634,7 +637,6 @@ class Bash:
         else:
             # Removes the last character of the snake from self.snake_list and self.snake-dict
             self.snake_list.remove(last_part)
-            del self.snake_dict[id((last_part.y, last_part.x))]
 
         return self.snake_head.y, self.snake_head.x
 
@@ -651,9 +653,8 @@ class Bash:
         self.del_char(self.snake_head.y, prev_head)
 
         # Adds body part right behind the head
-        behind_the_head = SnakeBody(self.snake_head.y, self.snake_head.x + 1, 'n')
-        # Appends body part to snake_dict and snake_list
-        self.snake_dict[id((self.snake_head.y, self.snake_head.x + 1))] = behind_the_head
+        behind_the_head = SnakeBody(self.snake_head.y, self.snake_head.x + 1)
+        # Appends body part to snake_list
         self.snake_list.insert(0, behind_the_head)
         # Creates char on the screen (body part right behind the head
         self.add_char(self.snake_head.y, self.snake_head.x + 1, 'O')
@@ -667,7 +668,6 @@ class Bash:
         else:
             # Removes the last character of the snake from self.snake_list and self.snake-dict
             self.snake_list.remove(last_part)
-            del self.snake_dict[id((last_part.y, last_part.x))]
 
         return self.snake_head.y, self.snake_head.x
 
