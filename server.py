@@ -23,9 +23,23 @@ def parse_json(json_data, required):
 
 app = Flask(__name__)
 
+
+@app.route('/test')
+def test():
+    """
+    A test site to check if the raspberry pi server is running
+    :return: Text
+    """
+    return "This snake game server is running!"
+
+
 @app.route('/make_game', methods=['POST'])
 def make_game():
+    """
+    Creates a game with the id to access it being the game creators hwid
+    :return: game dict with information needed to draw the snakes on the screen
+    """
     data = parse_json(request.get_json(force=True), ['hwid_id',])
-    
+
 
 app.run(host='0.0.0.0', port=80, debug=True)
