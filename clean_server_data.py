@@ -31,5 +31,5 @@ default_data = {
                             },
                     'printable': []}}
 
-print(file('games.pickle', 'rb'))
 file('games.pickle', 'wb', default_data)
+print(file('games.pickle', 'rb'))              
