@@ -9,12 +9,14 @@
 
 # Normal imports
 import curses
+import subprocess
 import sys
+import os
 import time
 import traceback
 
 # From imports
-from logic import Bash
+from logic import Bash, score, highscore
 
 
 # Initialization of bash
@@ -29,21 +31,34 @@ bash.refresh()
 bash.create_snake()
 
 # Initial key press
+prev_key = curses.KEY_UP
 key = curses.KEY_UP
 
 try:
     while True:
         # Captures keys
-        bash.capture_keys(bash.getch())
+        key = bash.getch()
+        if key != 27:
+            bash.capture_keys(key)
 
-        # Acts based off of key pressed
-        # Else it will default to keep moving
-        bash.tick()
-        try:
-            time.sleep(bash.sleep)
-        except ValueError:
-            # This means bash.sleep went negative
-            time.sleep(0.03)
+            # Acts based off of key pressed
+            # Else it will default to keep moving
+            bash.tick()
+            try:
+                time.sleep(bash.sleep)
+            except ValueError:
+                # This means bash.sleep went negative
+                time.sleep(0.03)
+        else:
+            # print("GAME OVER! YOU BUMPED INTO YOURSELF!")
+            # print(score(bash))
+            # print(highscore(bash))
+            while key == 27:
+                # While no other key was pressed after the escape key, the game is paused
+                pressed = bash.getch()
+                if pressed in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT, 27]:
+                    key = pressed
+                    break
 
 except Exception as e:
     bash.terminate_curses()
