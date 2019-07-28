@@ -527,10 +527,10 @@ class Bash:
         # Based off of the directions of the second to last part and the last part
         if second_to_last_part.y < last_part.y:
             # This means the second to last part is underneath the last part
-            dir_tuple = (last_part.y + 1, last_part.x)
+            dir_tuple = (last_part.y - 1, last_part.x)
         elif second_to_last_part.y > last_part.y:
             # This means the second to last part is above the last part
-            dir_tuple = (last_part.y - 1, last_part.x)
+            dir_tuple = (last_part.y + 1, last_part.x)
         elif second_to_last_part.x < last_part.x:
             # This means the second to last part is to the left of the last part
             dir_tuple = (last_part.y, last_part.x - 1)
