@@ -2,30 +2,35 @@
 # MADE BY
 # BEN MAYDAN
 
-# Tip: If you are using Windows and are using MINGW64 / Git bash, run this program by typing "winpty python main.py"
+# Tip: If you are using Windows and are using MINGW64 / Git bash, run this program by typing "winpty python single_player.py"
 # The reason why is because this terminal has a bug with running curses
 # Unless you want to mess with python aliases in .bash_profile, this is the best way to go about running this game
 
 
 # Normal imports
+import argparse
 import curses
-import subprocess
 import sys
-import os
-import time
 import traceback
+import time
 
 # From imports
 from logic import Bash, score, highscore
 
 
-# Initialization of bash
-bash = Bash(10, 0.1)
-bash.start_curses()
+# Argument parser if the user wants a custom intensity
+parser = argparse.ArgumentParser(description='This is an online snake game')
+parser.add_argument('-i', '--intensity', nargs='?', const=True, default=3, help='This is how much the snake grows every time food is eaten', type=int)
+args = parser.parse_args()
+# If a negative growth is given
+if args.intensity <= 0:
+    print("Intensity is not allowed to be less than or equal to 0!")
+    sys.exit()
 
-# Mandatory two refreshes
-bash.refresh()
-bash.refresh()
+
+# Initialization of bash
+bash = Bash(args.intensity, 10, 0.1)
+bash.start_curses()
 
 # Creates the snake
 bash.create_snake()
@@ -64,8 +69,3 @@ except Exception as e:
     bash.terminate_curses()
     traceback.print_exc()
     sys.exit()
-
-# This finally is for printing debugging statements
-# Because they don't show up while the program is running
-# finally:
-#     print("Right arrow key:", curses.KEY_RIGHT)

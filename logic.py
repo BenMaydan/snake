@@ -96,7 +96,7 @@ def snake_food_collision(bash, head):
     if head.y == bash.food[0] and head.x == bash.food[1]:
         # This is a test to see if the snake can actually grow
         # This can be commented out safely
-        for x in range(10):
+        for x in range(bash.growth):
             try:
                 bash.grow_snake()
             # curses._curses_error is not accessible so I need to catch all errors
@@ -260,11 +260,11 @@ class SnakeHead:
 
         # Checks for a collision with the border of the terminal
         if ycheck < 0:
-            bash.terminate_curses()
-            print("GAME OVER! YOU BUMPED INTO THE BORDER!")
-            print(score(bash))
-            print(highscore(bash))
-            sys.exit()
+           bash.terminate_curses()
+           print("GAME OVER! YOU BUMPED INTO THE BORDER!")
+           print(score(bash))
+           print(highscore(bash))
+           sys.exit()
         # No collision with the border of the terminal
         else:
             self.y -= 1
@@ -314,9 +314,8 @@ class SnakeBody:
 
 
 class Bash:
-    def __init__(self, generate_food, sleep):
+    def __init__(self, growth, generate_food, sleep):
         # This is for the world tick system
-        # This is not needed until I implement food for the snake, which will be a while
         self._tick_value = 0
         self.sleep = sleep
 
@@ -332,6 +331,7 @@ class Bash:
         # Every tick this value is incremented, unless food has just been generated
         # In that case, this value is set to 0
         self.food_tick = generate_food
+        self.growth = growth
 
         # This is for the food generation system. This list will hold all of the food
         # And when the snake moves it will check if the head is colliding
@@ -340,9 +340,7 @@ class Bash:
         self.food_exists = False
 
         # This score will be printed at the end. It is incremented every time the snake eats a piece of food
-        # And at the end of the game it is multiplied by how many seconds you stayed alive
         self.score = 0
-        self.time_spent = 1
 
     def start_curses(self):
         """
